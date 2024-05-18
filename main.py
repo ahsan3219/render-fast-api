@@ -96,7 +96,7 @@ async def hello(request: Request):
     history.append({
         'type': "AI Message",
         'message': res_message.get("text"),
-        'command': latest_command
+        'command': res_command.get("text")
     })
 
     return JSONResponse(content={"history": history}, status_code=200)
