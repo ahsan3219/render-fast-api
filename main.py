@@ -32,7 +32,7 @@ def message_japanese_query(payload):
     response = requests.post(Japanese_URL, json=payload)
     return response.json()
 
-@app.post("/api")
+@app.post("/api/english")
 async def hello(request: Request):
     body = await request.json()
     
