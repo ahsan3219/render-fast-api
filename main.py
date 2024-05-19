@@ -1,19 +1,3 @@
-# from typing import Optional
-
-# from fastapi import FastAPI
-
-# app = FastAPI()
-
-
-# @app.get("/")
-# async def root():
-#     return {"message": "Hello World"}
-
-# @app.get("/items/{item_id}")
-# def read_item(item_id: int, q: Optional[str] = None):
-#     return {"item_id": item_id, "q": q}
-
-
 from typing import Optional
 from fastapi import FastAPI, Request
 import requests
@@ -30,6 +14,9 @@ print("Command_URL", Command_URL)
 Message_URL = os.getenv('Message_URL')
 print("Message_URL", Message_URL)
 
+Japanese_URL=os.getenv("Japanese_URL")
+print("Japanese_URL", Japanese_URL)
+
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
@@ -41,41 +28,24 @@ def message_query(payload):
     response = requests.post(Message_URL, json=payload)
     return response.json()
 
-# @app.post("/api")
-# async def hello(request: Request):
-#     body = await request.json()
-#     history = body.get('history', [])
-    
-#     # Find the latest user message and command
-#     latest_user_message = None
-#     latest_command = None
-
-#     for entry in reversed(history):
-#         if entry.get("type") == "userMessage":
-#             latest_user_message = entry.get("message")
-#             latest_command = entry.get("command")
-#             break
-
-#     if latest_user_message is None:
-#         return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
-#     print("latest_user_message",latest_user_message)
-#     res_command = command_query({"question": latest_user_message})
-#     res_message = message_query({"question": latest_user_message})
-
-#     response = {
-#         'Type': "userMessage_response",
-#         'Command': res_command.get("text"),
-#         'Message': res_message.get("text")
-#     }
-
-#     return JSONResponse(content=response, status_code=200)
-
+def message_japanese_query(payload):
+    response = requests.post(Japanese_URL, json=payload)
+    return response.json()
 
 @app.post("/api")
 async def hello(request: Request):
     body = await request.json()
-    history = body.get('history', [])
     
+    history = body.get('history', [])
+    filtered_history = [
+    {
+        "message": entry["message"],
+        "type": entry["type"]
+    }
+    for entry in body["history"]
+]   
+    
+    print("History",filtered_history)
     # Find the latest user message and command
     latest_user_message = None
     latest_command = None
@@ -90,7 +60,9 @@ async def hello(request: Request):
         return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
 
     res_command = command_query({"question": latest_user_message})
-    res_message = message_query({"question": latest_user_message})
+    res_message = message_query({"question": latest_user_message,
+    "override":{
+    "memoryKey": filtered_history}})
 
     # Append new responses to the history
     history.append({
@@ -100,6 +72,50 @@ async def hello(request: Request):
     })
 
     return JSONResponse(content={"history": history}, status_code=200)
+
+
+
+@app.post("/api/japanese")
+async def hello(request: Request):
+    body = await request.json()
+    history = body.get('history', [])
+    
+    history = body.get('history', [])
+    filtered_history = [
+    {
+        "message": entry["message"],
+        "type": entry["type"]
+    }
+    for entry in body["history"]
+]
+    print("History",filtered_history)
+
+    # Find the latest user message and command
+    latest_user_message = None
+    latest_command = None
+
+    for entry in reversed(history):
+        if entry.get("type") == "userMessage":
+            latest_user_message = entry.get("message")
+            latest_command = entry.get("command")
+            break
+
+    if latest_user_message is None:
+        return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
+
+    res_command = command_query({"question": latest_user_message})
+    res_message = message_japanese_query({"question": latest_user_message,
+    "history": filtered_history})
+
+    # Append new responses to the history
+    history.append({
+        'type': "AI Message",
+        'message': res_message.get("text"),
+        'command': res_command.get("text")
+    })
+
+    return JSONResponse(content={"history": history}, status_code=200)
+
 
 @app.get("/test")
 def test():
