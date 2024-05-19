@@ -45,7 +45,7 @@ async def hello(request: Request):
     for entry in body["history"]
 ]   
     
-    print("History",filtered_history)
+    # print("History",filtered_history)
     # Find the latest user message and command
     latest_user_message = None
     latest_command = None
@@ -93,7 +93,7 @@ async def hello(request: Request):
     }
     for entry in body["history"]
 ]
-    print("History",filtered_history)
+    # print("History",filtered_history)
 
     # Find the latest user message and command
     latest_user_message = None
