@@ -65,13 +65,18 @@ async def hello(request: Request):
     "memoryKey": filtered_history}})
 
     # Append new responses to the history
-    history.append({
+    # history.append({
+    #     'type': "AI Message",
+    #     'message': res_message.get("text"),
+    #     'command': res_command.get("text")
+    # })
+
+    response={
         'type': "AI Message",
         'message': res_message.get("text"),
         'command': res_command.get("text")
-    })
-
-    return JSONResponse(content={"history": history}, status_code=200)
+    }
+    return JSONResponse(content={"response": response}, status_code=200)
 
 
 
@@ -108,14 +113,18 @@ async def hello(request: Request):
     "history": filtered_history})
 
     # Append new responses to the history
-    history.append({
+    # history.append({
+    #     'type': "AI Message",
+    #     'message': res_message.get("text"),
+    #     'command': res_command.get("text")
+    # })
+
+    response={
         'type': "AI Message",
         'message': res_message.get("text"),
         'command': res_command.get("text")
-    })
-
-    return JSONResponse(content={"history": history}, status_code=200)
-
+    }
+    return JSONResponse(content={"response": response}, status_code=200)
 
 @app.get("/test")
 def test():
