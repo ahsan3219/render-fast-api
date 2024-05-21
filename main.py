@@ -39,6 +39,17 @@ def message_japanese_query_rem(payload):
     response = requests.post(Japanese_URL_Rem, json=payload)
     return response.json()
 
+def clean_string(input_string):
+    # Remove newline characters
+    cleaned_string = input_string.replace('\n', '')
+    
+    # Remove leading space if it exists
+    if cleaned_string.startswith(' '):
+        cleaned_string = cleaned_string[1:]
+    
+    return cleaned_string
+
+
 @app.post("/api/english")
 async def hello(request: Request):
     body = await request.json()
@@ -71,17 +82,15 @@ async def hello(request: Request):
     "override":{
     "memoryKey": filtered_history}})
 
-    # Append new responses to the history
-    # history.append({
-    #     'type': "AI Message",
-    #     'message': res_message.get("text"),
-    #     'command': res_command.get("text")
-    # })
+    command_res=clean_string(res_command.get("text"))
+    print("Command_res",command_res)
+    message_res=clean_string(res_message.get("text"))
+    print("message_res",message_res)
 
     response={
         'type': "AI Message",
-        'message': res_message.get("text"),
-        'command': res_command.get("text")
+        'message': message_res,
+        'command': command_res
     }
     return JSONResponse(content={"response": response}, status_code=200)
 
@@ -118,18 +127,16 @@ async def hello(request: Request):
     res_command = command_query({"question": latest_user_message})
     res_message = message_japanese_query({"question": latest_user_message,
     "history": filtered_history})
-
-    # Append new responses to the history
-    # history.append({
-    #     'type': "AI Message",
-    #     'message': res_message.get("text"),
-    #     'command': res_command.get("text")
-    # })
+    
+    command_res=clean_string(res_command.get("text"))
+    print("Command_res",command_res)
+    message_res=clean_string(res_message.get("text"))
+    print("message_res",message_res)
 
     response={
         'type': "AI Message",
-        'message': res_message.get("text"),
-        'command': res_command.get("text")
+        'message': message_res,
+        'command': command_res
     }
     return JSONResponse(content={"response": response}, status_code=200)
 
@@ -165,18 +172,17 @@ async def hello(request: Request):
     res_message = message_japanese_query_rem({"question": latest_user_message,
     "history": filtered_history})
 
-    # Append new responses to the history
-    # history.append({
-    #     'type': "AI Message",
-    #     'message': res_message.get("text"),
-    #     'command': res_command.get("text")
-    # })
+    command_res=clean_string(res_command.get("text"))
+    print("Command_res",command_res)
+    message_res=clean_string(res_message.get("text"))
+    print("message_res",message_res)
 
     response={
         'type': "AI Message",
-        'message': res_message.get("text"),
-        'command': res_command.get("text")
+        'message': message_res,
+        'command': command_res
     }
+
     return JSONResponse(content={"response": response}, status_code=200)
 
 
