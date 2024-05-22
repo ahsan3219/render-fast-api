@@ -5,6 +5,10 @@ import os
 from dotenv import load_dotenv
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
+import asyncio
+import concurrent.futures
+
+
 
 load_dotenv()
 
@@ -51,20 +55,63 @@ def clean_string(input_string):
 
 
 @app.post("/api/english")
+# First Version Time Issue
+# async def hello(request: Request):
+#     body = await request.json()
+    
+#     history = body.get('history', [])
+#     filtered_history = [
+#     {
+#         "message": entry["message"],
+#         "type": entry["type"]
+#     }
+#     for entry in body["history"]
+#     ]   
+    
+#     # print("History",filtered_history)
+#     # Find the latest user message and command
+#     latest_user_message = None
+#     latest_command = None
+
+#     for entry in reversed(history):
+#         if entry.get("type") == "userMessage":
+#             latest_user_message = entry.get("message")
+#             latest_command = entry.get("command")
+#             break
+
+#     if latest_user_message is None:
+#         return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
+
+#     res_command = command_query({"question": latest_user_message})
+#     res_message = message_query({"question": latest_user_message,
+#     "override":{
+#     "memoryKey": filtered_history}})
+
+#     command_res=clean_string(res_command.get("text"))
+#     print("Command_res",command_res)
+#     message_res=clean_string(res_message.get("text"))
+#     print("message_res",message_res)
+
+#     response={
+#         'type': "AI Message",
+#         'message': message_res,
+#         'command': command_res
+#     }
+#     return JSONResponse(content={"response": response}, status_code=200)
+
+# Second Version Fixed Time Issue
 async def hello(request: Request):
     body = await request.json()
-    
     history = body.get('history', [])
-    filtered_history = [
-    {
-        "message": entry["message"],
-        "type": entry["type"]
-    }
-    for entry in body["history"]
-]   
     
-    # print("History",filtered_history)
-    # Find the latest user message and command
+    filtered_history = [
+        {
+            "message": entry["message"],
+            "type": entry["type"]
+        }
+        for entry in history
+    ]
+
     latest_user_message = None
     latest_command = None
 
@@ -77,41 +124,91 @@ async def hello(request: Request):
     if latest_user_message is None:
         return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
 
-    res_command = command_query({"question": latest_user_message})
-    res_message = message_query({"question": latest_user_message,
-    "override":{
-    "memoryKey": filtered_history}})
+    payload_command = {"question": latest_user_message}
+    payload_message = {"question": latest_user_message, "history": filtered_history}
 
-    command_res=clean_string(res_command.get("text"))
-    print("Command_res",command_res)
-    message_res=clean_string(res_message.get("text"))
-    print("message_res",message_res)
+    # Run both queries concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_command = executor.submit(command_query, payload_command)
+        future_message = executor.submit(message_query, payload_message)
+        
+        res_command = future_command.result()
+        res_message = future_message.result()
 
-    response={
+    command_res = clean_string(res_command.get("text"))
+    print("Command_res", command_res)
+    message_res = clean_string(res_message.get("text"))
+    print("message_res", message_res)
+
+    response = {
         'type': "AI Message",
         'message': message_res,
         'command': command_res
     }
+
     return JSONResponse(content={"response": response}, status_code=200)
+
 
 
 
 @app.post("/api/japanese")
+# First Version Time taking
+# async def hello(request: Request):
+#     body = await request.json()
+#     history = body.get('history', [])
+    
+#     history = body.get('history', [])
+#     filtered_history = [
+#     {
+#         "message": entry["message"],
+#         "type": entry["type"]
+#     }
+#     for entry in body["history"]
+#     ]
+#     # print("H`istory",filtered_history)
+
+#     # Find the latest user message and command
+#     latest_user_message = None
+#     latest_command = None
+
+#     for entry in reversed(history):
+#         if entry.get("type") == "userMessage":
+#             latest_user_message = entry.get("message")
+#             latest_command = entry.get("command")
+#             break
+
+#     if latest_user_message is None:
+#         return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
+
+#     res_command = command_query({"question": latest_user_message})
+#     res_message = message_japanese_query({"question": latest_user_message,
+#     "history": filtered_history})
+    
+#     command_res=clean_string(res_command.get("text"))
+#     print("Command_res",command_res)
+#     message_res=clean_string(res_message.get("text"))
+#     print("message_res",message_res)
+
+#     response={
+#         'type': "AI Message",
+#         'message': message_res,
+#         'command': command_res
+#     }
+#     return JSONResponse(content={"response": response}, status_code=200)
+
+# Second Version Fixed Time Issue
 async def hello(request: Request):
     body = await request.json()
     history = body.get('history', [])
     
-    history = body.get('history', [])
     filtered_history = [
-    {
-        "message": entry["message"],
-        "type": entry["type"]
-    }
-    for entry in body["history"]
-]
-    # print("H`istory",filtered_history)
+        {
+            "message": entry["message"],
+            "type": entry["type"]
+        }
+        for entry in history
+    ]
 
-    # Find the latest user message and command
     latest_user_message = None
     latest_command = None
 
@@ -124,38 +221,90 @@ async def hello(request: Request):
     if latest_user_message is None:
         return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
 
-    res_command = command_query({"question": latest_user_message})
-    res_message = message_japanese_query({"question": latest_user_message,
-    "history": filtered_history})
-    
-    command_res=clean_string(res_command.get("text"))
-    print("Command_res",command_res)
-    message_res=clean_string(res_message.get("text"))
-    print("message_res",message_res)
+    payload_command = {"question": latest_user_message}
+    payload_message = {"question": latest_user_message, "history": filtered_history}
 
-    response={
+    # Run both queries concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_command = executor.submit(command_query, payload_command)
+        future_message = executor.submit(message_japanese_query, payload_message)
+        
+        res_command = future_command.result()
+        res_message = future_message.result()
+
+    command_res = clean_string(res_command.get("text"))
+    print("Command_res", command_res)
+    message_res = clean_string(res_message.get("text"))
+    print("message_res", message_res)
+
+    response = {
         'type': "AI Message",
         'message': message_res,
         'command': command_res
     }
+
     return JSONResponse(content={"response": response}, status_code=200)
 
+
+
 @app.post("/api/japanese/rem")
+# First Version Taking Time To response
+# async def hello(request: Request):
+#     body = await request.json()
+#     history = body.get('history', [])
+    
+#     history = body.get('history', [])
+#     filtered_history = [
+#     {
+#         "message": entry["message"],
+#         "type": entry["type"]
+#     }
+#     for entry in body["history"]
+#     ]
+#     # print("H`istory",filtered_history)
+
+#     # Find the latest user message and command
+#     latest_user_message = None
+#     latest_command = None
+
+#     for entry in reversed(history):
+#         if entry.get("type") == "userMessage":
+#             latest_user_message = entry.get("message")
+#             latest_command = entry.get("command")
+#             break
+
+#     if latest_user_message is None:
+#         return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
+
+#     res_command = command_query({"question": latest_user_message})
+#     res_message = message_japanese_query_rem({"question": latest_user_message,
+#     "history": filtered_history})
+
+#     command_res=clean_string(res_command.get("text"))
+#     print("Command_res",command_res)
+#     message_res=clean_string(res_message.get("text"))
+#     print("message_res",message_res)
+
+#     response={
+#         'type': "AI Message",
+#         'message': message_res,
+#         'command': command_res
+#     }
+
+#     return JSONResponse(content={"response": response}, status_code=200)
+# Second Version Fixed Time Issue
 async def hello(request: Request):
     body = await request.json()
     history = body.get('history', [])
     
-    history = body.get('history', [])
     filtered_history = [
-    {
-        "message": entry["message"],
-        "type": entry["type"]
-    }
-    for entry in body["history"]
-]
-    # print("H`istory",filtered_history)
+        {
+            "message": entry["message"],
+            "type": entry["type"]
+        }
+        for entry in history
+    ]
 
-    # Find the latest user message and command
     latest_user_message = None
     latest_command = None
 
@@ -168,16 +317,23 @@ async def hello(request: Request):
     if latest_user_message is None:
         return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
 
-    res_command = command_query({"question": latest_user_message})
-    res_message = message_japanese_query_rem({"question": latest_user_message,
-    "history": filtered_history})
+    payload_command = {"question": latest_user_message}
+    payload_message = {"question": latest_user_message, "history": filtered_history}
 
-    command_res=clean_string(res_command.get("text"))
-    print("Command_res",command_res)
-    message_res=clean_string(res_message.get("text"))
-    print("message_res",message_res)
+    # Run both queries concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_command = executor.submit(command_query, payload_command)
+        future_message = executor.submit(message_japanese_query_rem, payload_message)
+        
+        res_command = future_command.result()
+        res_message = future_message.result()
 
-    response={
+    command_res = clean_string(res_command.get("text"))
+    print("Command_res", command_res)
+    message_res = clean_string(res_message.get("text"))
+    print("message_res", message_res)
+
+    response = {
         'type': "AI Message",
         'message': message_res,
         'command': command_res
