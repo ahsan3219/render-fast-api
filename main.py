@@ -25,6 +25,27 @@ print("Japanese_URL", Japanese_URL)
 Japanese_URL_Rem=os.getenv("Japanese_URL_Rem")
 print("Japanese_URL_Rem", Japanese_URL_Rem)
 
+# Second version Env start here
+
+mai_english_message_url=os.getenv("mai_english_message_url")
+print("mai_english_message_url", mai_english_message_url)
+
+mai_japanese_message_url=os.getenv("mai_japanese_message_url")
+print("mai_japanese_message_url", mai_japanese_message_url)
+
+mai_spanish_message_url=os.getenv("mai_spanish_message_url")
+print("mai_spanish_message_url", mai_spanish_message_url)
+
+rem_english_message_url=os.getenv("rem_english_message_url")
+print("rem_english_message_url", rem_english_message_url)
+
+rem_japanese_message_url=os.getenv("rem_japanese_message_url")
+print("rem_japanese_message_url", rem_japanese_message_url)
+
+rem_spanish_message_url=os.getenv("rem_spanish_message_url")
+print("rem_spanish_message_url", rem_spanish_message_url)
+
+
 app = FastAPI()
 origins = ["*"]
 
@@ -52,6 +73,36 @@ def message_japanese_query(payload):
 
 def message_japanese_query_rem(payload):
     response = requests.post(Japanese_URL_Rem, json=payload)
+    return response.json()
+
+
+# Second Version for all six endpoints start here
+def mai_english_message(payload):
+    response = requests.post(mai_english_message_url, json=payload)
+    return response.json()
+
+def mai_japanese_message(payload):
+    response = requests.post(mai_japanese_message_url, json=payload)
+    return response.json()
+
+
+def mai_spanish_message(payload):
+    response = requests.post(mai_spanish_message_url, json=payload)
+    return response.json()
+
+
+def rem_english_message(payload):
+    response = requests.post(rem_english_message_url, json=payload)
+    return response.json()
+
+
+def rem_japanese_message(payload):
+    response = requests.post(rem_japanese_message_url, json=payload)
+    return response.json()
+
+
+def rem_spanish_message(payload):
+    response = requests.post(rem_spanish_message_url, json=payload)
     return response.json()
 
 def clean_string(input_string):
@@ -353,9 +404,315 @@ async def hello(request: Request):
     return JSONResponse(content={"response": response}, status_code=200)
 
 
+
+# Second version start from here it contains all six endpoints 27-june-2024
+@app.post("/api/mai/english")
+async def hello(request: Request):
+    body = await request.json()
+    history = body.get('history', [])
+    
+    filtered_history = [
+        {
+            "message": entry["message"],
+            "type": entry["type"]
+        }
+        for entry in history
+    ]
+
+    latest_user_message = None
+    latest_command = None
+
+    for entry in reversed(history):
+        if entry.get("type") == "userMessage":
+            latest_user_message = entry.get("message")
+            latest_command = entry.get("command")
+            break
+
+    if latest_user_message is None:
+        return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
+
+    payload_command = {"question": latest_user_message}
+    payload_message = {"question": latest_user_message, "history": filtered_history}
+
+    # Run both queries concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_command = executor.submit(command_query, payload_command)
+        future_message = executor.submit(mai_english_message, payload_message)
+        
+        res_command = future_command.result()
+        res_message = future_message.result()
+
+    command_res = clean_string(res_command.get("text"))
+    print("Command_res", command_res)
+    message_res = clean_string(res_message.get("text"))
+    print("message_res", message_res)
+
+    response = {
+        'type': "AI Message",
+        'message': message_res,
+        'command': command_res
+    }
+
+    return JSONResponse(content={"response": response}, status_code=200)
+
+
+@app.post("/api/mai/japanese")
+async def hello(request: Request):
+    body = await request.json()
+    history = body.get('history', [])
+    
+    filtered_history = [
+        {
+            "message": entry["message"],
+            "type": entry["type"]
+        }
+        for entry in history
+    ]
+
+    latest_user_message = None
+    latest_command = None
+
+    for entry in reversed(history):
+        if entry.get("type") == "userMessage":
+            latest_user_message = entry.get("message")
+            latest_command = entry.get("command")
+            break
+
+    if latest_user_message is None:
+        return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
+
+    payload_command = {"question": latest_user_message}
+    payload_message = {"question": latest_user_message, "history": filtered_history}
+
+    # Run both queries concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_command = executor.submit(command_query, payload_command)
+        future_message = executor.submit(mai_japanese_message, payload_message)
+        
+        res_command = future_command.result()
+        res_message = future_message.result()
+
+    command_res = clean_string(res_command.get("text"))
+    print("Command_res", command_res)
+    message_res = clean_string(res_message.get("text"))
+    print("message_res", message_res)
+
+    response = {
+        'type': "AI Message",
+        'message': message_res,
+        'command': command_res
+    }
+
+    return JSONResponse(content={"response": response}, status_code=200)
+
+
+@app.post("/api/mai/spanish")
+async def hello(request: Request):
+    body = await request.json()
+    history = body.get('history', [])
+    
+    filtered_history = [
+        {
+            "message": entry["message"],
+            "type": entry["type"]
+        }
+        for entry in history
+    ]
+
+    latest_user_message = None
+    latest_command = None
+
+    for entry in reversed(history):
+        if entry.get("type") == "userMessage":
+            latest_user_message = entry.get("message")
+            latest_command = entry.get("command")
+            break
+
+    if latest_user_message is None:
+        return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
+
+    payload_command = {"question": latest_user_message}
+    payload_message = {"question": latest_user_message, "history": filtered_history}
+
+    # Run both queries concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_command = executor.submit(command_query, payload_command)
+        future_message = executor.submit(mai_spanish_message, payload_message)
+        
+        res_command = future_command.result()
+        res_message = future_message.result()
+
+    command_res = clean_string(res_command.get("text"))
+    print("Command_res", command_res)
+    message_res = clean_string(res_message.get("text"))
+    print("message_res", message_res)
+
+    response = {
+        'type': "AI Message",
+        'message': message_res,
+        'command': command_res
+    }
+
+    return JSONResponse(content={"response": response}, status_code=200)
+
+
+@app.post("/api/rem/english")
+async def hello(request: Request):
+    body = await request.json()
+    history = body.get('history', [])
+    
+    filtered_history = [
+        {
+            "message": entry["message"],
+            "type": entry["type"]
+        }
+        for entry in history
+    ]
+
+    latest_user_message = None
+    latest_command = None
+
+    for entry in reversed(history):
+        if entry.get("type") == "userMessage":
+            latest_user_message = entry.get("message")
+            latest_command = entry.get("command")
+            break
+
+    if latest_user_message is None:
+        return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
+
+    payload_command = {"question": latest_user_message}
+    payload_message = {"question": latest_user_message, "history": filtered_history}
+
+    # Run both queries concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_command = executor.submit(command_query, payload_command)
+        future_message = executor.submit(rem_english_message, payload_message)
+        
+        res_command = future_command.result()
+        res_message = future_message.result()
+
+    command_res = clean_string(res_command.get("text"))
+    print("Command_res", command_res)
+    message_res = clean_string(res_message.get("text"))
+    print("message_res", message_res)
+
+    response = {
+        'type': "AI Message",
+        'message': message_res,
+        'command': command_res
+    }
+
+    return JSONResponse(content={"response": response}, status_code=200)
+
+
+@app.post("/api/rem/japanese")
+async def hello(request: Request):
+    body = await request.json()
+    history = body.get('history', [])
+    
+    filtered_history = [
+        {
+            "message": entry["message"],
+            "type": entry["type"]
+        }
+        for entry in history
+    ]
+
+    latest_user_message = None
+    latest_command = None
+
+    for entry in reversed(history):
+        if entry.get("type") == "userMessage":
+            latest_user_message = entry.get("message")
+            latest_command = entry.get("command")
+            break
+
+    if latest_user_message is None:
+        return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
+
+    payload_command = {"question": latest_user_message}
+    payload_message = {"question": latest_user_message, "history": filtered_history}
+
+    # Run both queries concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_command = executor.submit(command_query, payload_command)
+        future_message = executor.submit(rem_japanese_message, payload_message)
+        
+        res_command = future_command.result()
+        res_message = future_message.result()
+
+    command_res = clean_string(res_command.get("text"))
+    print("Command_res", command_res)
+    message_res = clean_string(res_message.get("text"))
+    print("message_res", message_res)
+
+    response = {
+        'type': "AI Message",
+        'message': message_res,
+        'command': command_res
+    }
+
+    return JSONResponse(content={"response": response}, status_code=200)
+
+
+@app.post("/api/rem/spanish")
+async def hello(request: Request):
+    body = await request.json()
+    history = body.get('history', [])
+    
+    filtered_history = [
+        {
+            "message": entry["message"],
+            "type": entry["type"]
+        }
+        for entry in history
+    ]
+
+    latest_user_message = None
+    latest_command = None
+
+    for entry in reversed(history):
+        if entry.get("type") == "userMessage":
+            latest_user_message = entry.get("message")
+            latest_command = entry.get("command")
+            break
+
+    if latest_user_message is None:
+        return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
+
+    payload_command = {"question": latest_user_message}
+    payload_message = {"question": latest_user_message, "history": filtered_history}
+
+    # Run both queries concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_command = executor.submit(command_query, payload_command)
+        future_message = executor.submit(rem_spanish_message, payload_message)
+        
+        res_command = future_command.result()
+        res_message = future_message.result()
+
+    command_res = clean_string(res_command.get("text"))
+    print("Command_res", command_res)
+    message_res = clean_string(res_message.get("text"))
+    print("message_res", message_res)
+
+    response = {
+        'type': "AI Message",
+        'message': message_res,
+        'command': command_res
+    }
+
+    return JSONResponse(content={"response": response}, status_code=200)
+
 @app.get("/test")
 def test():
     return {"message": "Test"}
+
+@app.get("/")
+def test():
+    return {"message": "Greetings from ENDPOINTS MAIN PAGE"}
+
 
 @app.get("/result")
 def result(request: Request):
