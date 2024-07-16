@@ -8,10 +8,13 @@ from fastapi.templating import Jinja2Templates
 import asyncio
 import concurrent.futures
 from fastapi.middleware.cors import CORSMiddleware
-
+import uuid
 
 
 load_dotenv()
+
+session_histories = {}
+
 
 Command_URL = os.getenv('Command_URL')
 print("Command_URL", Command_URL)
@@ -29,6 +32,9 @@ print("Japanese_URL_Rem", Japanese_URL_Rem)
 
 mai_english_message_url=os.getenv("mai_english_message_url")
 print("mai_english_message_url", mai_english_message_url)
+
+jesus_rag_url=os.getenv("jesus_rag_url")
+print("jesus_rag_url", jesus_rag_url)
 
 mai_japanese_message_url=os.getenv("mai_japanese_message_url")
 print("mai_japanese_message_url", mai_japanese_message_url)
@@ -104,6 +110,11 @@ def rem_japanese_message(payload):
 def rem_spanish_message(payload):
     response = requests.post(rem_spanish_message_url, json=payload)
     return response.json()
+
+def jesus_rag(payload):
+    response = requests.post(jesus_rag_url, json=payload)
+    return response.json()
+
 
 def clean_string(input_string):
     # Remove newline characters
@@ -704,6 +715,75 @@ async def hello(request: Request):
     }
 
     return JSONResponse(content={"response": response}, status_code=200)
+
+
+
+
+@app.post("/api/rag/jesuschirst")
+async def hello(request: Request):
+    body = await request.json()
+    
+    # Get or generate sessionId
+    session_id = body.get('sessionId')
+    print("Session Id", session_id)
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        session_histories[session_id] = []
+
+    history = body.get('history', [])
+    if session_id in session_histories:
+        session_histories[session_id].extend(history)
+    else:
+        session_histories[session_id] = history
+
+    filtered_history = [
+        {
+            "message": entry["message"],
+            "type": entry["type"]
+        }
+        for entry in session_histories[session_id]
+    ]
+
+    latest_user_message = None
+
+    for entry in reversed(session_histories[session_id]):
+        if entry.get("type") == "userMessage":
+            latest_user_message = entry.get("message")
+            break
+
+    if latest_user_message is None:
+        raise HTTPException(status_code=400, detail="No user message found in history")
+
+    if session_id:
+        payload_message = {
+            "question": latest_user_message,
+            "history": filtered_history,
+            "overrideConfig": {
+                "sessionId": session_id
+            }
+        }
+        print("Payload",payload_message)
+    else:
+        payload_message = {
+            "question": latest_user_message,
+            "history": filtered_history
+        }
+        print("Payload",payload_message)
+
+    # Run both queries concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_message = executor.submit(jesus_rag, payload_message)
+        res_message = future_message.result()
+    message_res = clean_string(res_message.get("text"))
+
+    response = {
+        'type': "AI Message",
+        'message': message_res,
+        'sessionId': session_id  # Include sessionId in the response
+    }
+
+    return JSONResponse(content={"response": response}, status_code=200)
+
 
 @app.get("/test")
 def test():
