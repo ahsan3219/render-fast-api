@@ -725,7 +725,7 @@ async def hello(request: Request):
     
     # Get or generate sessionId
     session_id = body.get('sessionId')
-    print("Session Id", session_id)
+    print("Session Id", type(session_id),session_id)
     if not session_id:
         session_id = str(uuid.uuid4())
         session_histories[session_id] = []
@@ -738,8 +738,8 @@ async def hello(request: Request):
 
     filtered_history = [
         {
-            "message": entry["message"],
-            "type": entry["type"]
+            "content": entry["message"],
+            "role": entry["type"]
         }
         for entry in session_histories[session_id]
     ]
@@ -754,13 +754,18 @@ async def hello(request: Request):
     if latest_user_message is None:
         raise HTTPException(status_code=400, detail="No user message found in history")
 
-    if session_id:
+    if type(session_id)!=int:
+        # payload_message = {
+        #     "question": latest_user_message,
+        #     "history": filtered_history,
+        #     "overrideConfig": {
+        #         "sessionId": session_id
+        #     }
+        # }
+        print("History",filtered_history )
         payload_message = {
             "question": latest_user_message,
-            "history": filtered_history,
-            "overrideConfig": {
-                "sessionId": session_id
-            }
+            "history": filtered_history
         }
         print("Payload",payload_message)
     else:
