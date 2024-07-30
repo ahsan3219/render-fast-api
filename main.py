@@ -51,6 +51,15 @@ print("rem_japanese_message_url", rem_japanese_message_url)
 rem_spanish_message_url=os.getenv("rem_spanish_message_url")
 print("rem_spanish_message_url", rem_spanish_message_url)
 
+malexx_english_message_url=os.getenv("malexx_english")
+print("malexx_english_message_url", malexx_english_message_url)
+
+malexx_japanese_message_url=os.getenv("malexx_spanish")
+print("malexx_japanese_message_url", malexx_japanese_message_url)
+
+malexx_spanish_message_url=os.getenv("malexx_japanese")
+print("malexx_spanish_message_url", malexx_spanish_message_url)
+
 
 app = FastAPI()
 origins = ["*"]
@@ -115,6 +124,19 @@ def jesus_rag(payload):
     response = requests.post(jesus_rag_url, json=payload)
     return response.json()
 
+# Malexx Start Here
+
+def malexx_spanish_message(payload):
+    response = requests.post(malexx_spanish_message_url, json=payload)
+    return response.json()
+
+def malexx_english_message(payload):
+    response = requests.post(malexx_english_message_url, json=payload)
+    return response.json()
+
+def malexx_japanese_message(payload):
+    response = requests.post(malexx_japanese_message_url, json=payload)
+    return response.json()
 
 def clean_string(input_string):
     # Remove newline characters
@@ -718,6 +740,167 @@ async def hello(request: Request):
 
 
 
+# Malexx English Endpoint
+
+@app.post("/api/malexx/english")
+async def hello(request: Request):
+    body = await request.json()
+    history = body.get('history', [])
+    
+    filtered_history = [
+        {
+            "content": entry["message"],
+            "role": entry["type"]
+        }
+        for entry in history
+    ]
+
+    latest_user_message = None
+    latest_command = None
+
+    for entry in reversed(history):
+        if entry.get("type") == "userMessage":
+            latest_user_message = entry.get("message")
+            latest_command = entry.get("command")
+            break
+
+    if latest_user_message is None:
+        return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
+
+    payload_command = {"question": latest_user_message}
+    payload_message = {"question": latest_user_message, "history": filtered_history}
+
+
+    # Run both queries concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_command = executor.submit(command_query, payload_command)
+        future_message = executor.submit(malexx_english_message, payload_message)
+        
+        
+        res_command = future_command.result()
+        res_message = future_message.result()
+
+    command_res = clean_string(res_command.get("text"))
+    print("Command_res", command_res)
+    message_res = clean_string(res_message.get("text"))
+    print("message_res", message_res)
+
+    response = {
+        'type': "AI Message",
+        'message': message_res,
+        # 'command': command_res
+    }
+
+    return JSONResponse(content={"response": response}, status_code=200)
+
+
+# Malexx japanese Endpoint
+
+@app.post("/api/malexx/japanese")
+async def hello(request: Request):
+    body = await request.json()
+    history = body.get('history', [])
+    
+    filtered_history = [
+        {
+            "content": entry["message"],
+            "role": entry["type"]
+        }
+        for entry in history
+    ]
+
+    latest_user_message = None
+    latest_command = None
+
+    for entry in reversed(history):
+        if entry.get("type") == "userMessage":
+            latest_user_message = entry.get("message")
+            latest_command = entry.get("command")
+            break
+
+    if latest_user_message is None:
+        return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
+
+    payload_command = {"question": latest_user_message}
+    payload_message = {"question": latest_user_message, "history": filtered_history}
+
+    # Run both queries concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_command = executor.submit(command_query, payload_command)
+        future_message = executor.submit(malexx_spanish_message, payload_message)
+        
+        res_command = future_command.result()
+        res_message = future_message.result()
+
+    command_res = clean_string(res_command.get("text"))
+    print("Command_res", command_res)
+    message_res = clean_string(res_message.get("text"))
+    print("message_res", message_res)
+
+    response = {
+        'type': "AI Message",
+        'message': message_res,
+        'command': command_res
+    }
+
+    return JSONResponse(content={"response": response}, status_code=200)
+
+
+# Malexx Spanish Endpoint
+
+@app.post("/api/malexx/spanish")
+async def hello(request: Request):
+    body = await request.json()
+    history = body.get('history', [])
+    
+    filtered_history = [
+        {
+            "content": entry["message"],
+            "role": entry["type"]
+        }
+        for entry in history
+    ]
+
+    latest_user_message = None
+    latest_command = None
+
+    for entry in reversed(history):
+        if entry.get("type") == "userMessage":
+            latest_user_message = entry.get("message")
+            latest_command = entry.get("command")
+            break
+
+    if latest_user_message is None:
+        return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
+
+    payload_command = {"question": latest_user_message}
+    payload_message = {"question": latest_user_message, "history": filtered_history}
+
+    # Run both queries concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_command = executor.submit(command_query, payload_command)
+        future_message = executor.submit(malexx_japanese_message, payload_message)
+        
+        res_command = future_command.result()
+        res_message = future_message.result()
+
+    command_res = clean_string(res_command.get("text"))
+    print("Command_res", command_res)
+    message_res = clean_string(res_message.get("text"))
+    print("message_res", message_res)
+
+    response = {
+        'type': "AI Message",
+        'message': message_res,
+        'command': command_res
+    }
+
+    return JSONResponse(content={"response": response}, status_code=200)
+
+
+
+
+# Jesus Christ Endpoint
 
 @app.post("/api/rag/jesuschirst")
 async def hello(request: Request):
