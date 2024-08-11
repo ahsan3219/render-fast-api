@@ -61,6 +61,15 @@ malexx_spanish_message_url=os.getenv("malexx_japanese")
 print("malexx_spanish_message_url", malexx_spanish_message_url)
 
 
+Shaira_english_message_url=os.getenv("Shaira_english")
+print("Shaira_english_message_url", Shaira_english_message_url)
+
+Shaira_japanese_message_url=os.getenv("Shaira_japanese")
+print("Shaira_japanese_message_url", Shaira_japanese_message_url)
+
+Shaira_spanish_message_url=os.getenv("Shaira_spanish")
+print("Shaira_spanish_message_url", Shaira_spanish_message_url)
+
 app = FastAPI()
 origins = ["*"]
 
@@ -137,6 +146,22 @@ def malexx_english_message(payload):
 def malexx_japanese_message(payload):
     response = requests.post(malexx_japanese_message_url, json=payload)
     return response.json()
+
+# Shaira Start Here
+
+def shaira_spanish_message(payload):
+    response = requests.post(Shaira_spanish_message_url, json=payload)
+    return response.json()
+
+def shaira_english_message(payload):
+    response = requests.post(Shaira_english_message_url, json=payload)
+    return response.json()
+
+def shaira_japanese_message(payload):
+    response = requests.post(Shaira_japanese_message_url, json=payload)
+    return response.json()
+
+
 
 def clean_string(input_string):
     # Remove newline characters
@@ -971,6 +996,171 @@ async def hello(request: Request):
     }
 
     return JSONResponse(content={"response": response}, status_code=200)
+
+
+
+
+
+
+# Shaira English Endpoint
+
+@app.post("/api/shaira/english")
+async def hello(request: Request):
+    body = await request.json()
+    history = body.get('history', [])
+    
+    filtered_history = [
+        {
+            "content": entry["message"],
+            "role": entry["type"]
+        }
+        for entry in history
+    ]
+
+    latest_user_message = None
+    latest_command = None
+
+    for entry in reversed(history):
+        if entry.get("type") == "userMessage":
+            latest_user_message = entry.get("message")
+            latest_command = entry.get("command")
+            break
+
+    if latest_user_message is None:
+        return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
+
+    payload_command = {"question": latest_user_message}
+    payload_message = {"question": latest_user_message, "history": filtered_history}
+
+
+    # Run both queries concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_command = executor.submit(command_query, payload_command)
+        future_message = executor.submit(shaira_english_message, payload_message)
+        
+        
+        res_command = future_command.result()
+        res_message = future_message.result()
+
+    command_res = clean_string(res_command.get("text"))
+    print("Command_res", command_res)
+    message_res = clean_string(res_message.get("text"))
+    print("message_res", message_res)
+
+    response = {
+        'type': "AI Message",
+        'message': message_res,
+        # 'command': command_res
+    }
+
+    return JSONResponse(content={"response": response}, status_code=200)
+
+
+# Shaira japanese Endpoint
+
+@app.post("/api/shaira/japanese")
+async def hello(request: Request):
+    body = await request.json()
+    history = body.get('history', [])
+    
+    filtered_history = [
+        {
+            "content": entry["message"],
+            "role": entry["type"]
+        }
+        for entry in history
+    ]
+
+    latest_user_message = None
+    latest_command = None
+
+    for entry in reversed(history):
+        if entry.get("type") == "userMessage":
+            latest_user_message = entry.get("message")
+            latest_command = entry.get("command")
+            break
+
+    if latest_user_message is None:
+        return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
+
+    payload_command = {"question": latest_user_message}
+    payload_message = {"question": latest_user_message, "history": filtered_history}
+
+    # Run both queries concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_command = executor.submit(command_query, payload_command)
+        future_message = executor.submit(shaira_japanese_message, payload_message)
+        
+        res_command = future_command.result()
+        res_message = future_message.result()
+
+    command_res = clean_string(res_command.get("text"))
+    print("Command_res", command_res)
+    message_res = clean_string(res_message.get("text"))
+    print("message_res", message_res)
+
+    response = {
+        'type': "AI Message",
+        'message': message_res,
+        'command': command_res
+    }
+
+    return JSONResponse(content={"response": response}, status_code=200)
+
+
+# Shaira Spanish Endpoint
+
+@app.post("/api/shaira/spanish")
+async def hello(request: Request):
+    body = await request.json()
+    history = body.get('history', [])
+    
+    filtered_history = [
+        {
+            "content": entry["message"],
+            "role": entry["type"]
+        }
+        for entry in history
+    ]
+
+    latest_user_message = None
+    latest_command = None
+
+    for entry in reversed(history):
+        if entry.get("type") == "userMessage":
+            latest_user_message = entry.get("message")
+            latest_command = entry.get("command")
+            break
+
+    if latest_user_message is None:
+        return JSONResponse(content={"error": "No user message found in history"}, status_code=400)
+
+    payload_command = {"question": latest_user_message}
+    payload_message = {"question": latest_user_message, "history": filtered_history}
+
+    # Run both queries concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_command = executor.submit(command_query, payload_command)
+        future_message = executor.submit(shaira_spanish_message, payload_message)
+        
+        res_command = future_command.result()
+        res_message = future_message.result()
+
+    command_res = clean_string(res_command.get("text"))
+    print("Command_res", command_res)
+    message_res = clean_string(res_message.get("text"))
+    print("message_res", message_res)
+
+    response = {
+        'type': "AI Message",
+        'message': message_res,
+        'command': command_res
+    }
+
+    return JSONResponse(content={"response": response}, status_code=200)
+
+
+
 
 
 @app.get("/test")
