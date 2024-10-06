@@ -999,6 +999,79 @@ async def hello(request: Request):
 
 
 
+# Jesus Christ WhatsApp Endpoint  Endpoint
+
+@app.post("/jesuschirst/whatsapp")
+async def hello(request: Request):
+    body = await request.json()
+    
+    # Get or generate sessionId
+    session_id = body.get('sessionId')
+    print("Session Id", type(session_id),session_id)
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        session_histories[session_id] = []
+
+    history = body.get('history', [])
+    if session_id in session_histories:
+        session_histories[session_id].extend(history)
+    else:
+        session_histories[session_id] = history
+
+    filtered_history = [
+        {
+            "content": entry["message"],
+            "role": entry["type"]
+        }
+        for entry in session_histories[session_id]
+    ]
+
+    latest_user_message = None
+
+    for entry in reversed(session_histories[session_id]):
+        if entry.get("type") == "userMessage":
+            latest_user_message = entry.get("message")
+            break
+
+    if latest_user_message is None:
+        raise HTTPException(status_code=400, detail="No user message found in history")
+
+    if type(session_id)!=int:
+        # payload_message = {
+        #     "question": latest_user_message,
+        #     "history": filtered_history,
+        #     "overrideConfig": {
+        #         "sessionId": session_id
+        #     }
+        # }
+        print("History",filtered_history )
+        payload_message = {
+            "question": latest_user_message,
+            "history": filtered_history
+        }
+        print("Payload",payload_message)
+    else:
+        payload_message = {
+            "question": latest_user_message,
+            "history": filtered_history
+        }
+        print("Payload",payload_message)
+
+    # Run both queries concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_message = executor.submit(jesus_rag, payload_message)
+        res_message = future_message.result()
+    message_res = clean_string(res_message.get("text"))
+
+    response = {
+        'type': "AI Message",
+        'message': message_res,
+        'sessionId': session_id  # Include sessionId in the response
+    }
+
+    return JSONResponse(content={"response": response}, status_code=200)
+
+
 
 
 
